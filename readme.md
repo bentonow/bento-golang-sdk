@@ -26,7 +26,7 @@ Get started with our [ðŸ“š integration guides](https://docs.bentonow.com), or [ð
 Install the package via Go modules:
 
 ```bash
-go get github.com/bentonow/bento-go-sdk
+go get github.com/bentonow/bento-golang-sdk
 ```
 
 ## Quick Start
