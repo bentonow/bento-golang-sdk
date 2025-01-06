@@ -349,35 +349,47 @@ func TestStatsContextCancellation(t *testing.T) {
 }
 
 func TestRequestValidation(t *testing.T) {
-	client, err := setupTestClient(func(req *http.Request) (*http.Response, error) {
-		return mockResponse(http.StatusOK, map[string]interface{}{
-			"data": "test",
-		}), nil
-	})
+	client, err := setupTestClient(func(_ *http.Request) (*http.Response, error) {
+        return mockResponse(http.StatusOK, map[string]interface{}{
+            "data": "test",
+        }), nil
+    })
 
 	if err != nil {
 		t.Fatalf("failed to setup test client: %v", err)
 	}
 
-	// Test nil context cases
-	t.Run("GetSiteStats with nil context", func(t *testing.T) {
-		_, err := client.GetSiteStats(nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately to create invalid context
+
+	// Test cancelled context cases
+	t.Run("GetSiteStats with cancelled context", func(t *testing.T) {
+		_, err := client.GetSiteStats(ctx)
 		if err == nil {
-			t.Error("expected error with nil context, got nil")
+			t.Error("expected error with cancelled context, got nil")
+		}
+		if err != context.Canceled {
+			t.Errorf("expected context.Canceled error, got %v", err)
 		}
 	})
 
-	t.Run("GetSegmentStats with nil context", func(t *testing.T) {
-		_, err := client.GetSegmentStats(nil, "segment123")
+	t.Run("GetSegmentStats with cancelled context", func(t *testing.T) {
+		_, err := client.GetSegmentStats(ctx, "segment123")
 		if err == nil {
-			t.Error("expected error with nil context, got nil")
+			t.Error("expected error with cancelled context, got nil")
+		}
+		if err != context.Canceled {
+			t.Errorf("expected context.Canceled error, got %v", err)
 		}
 	})
 
-	t.Run("GetReportStats with nil context", func(t *testing.T) {
-		_, err := client.GetReportStats(nil, "report123")
+	t.Run("GetReportStats with cancelled context", func(t *testing.T) {
+		_, err := client.GetReportStats(ctx, "report123")
 		if err == nil {
-			t.Error("expected error with nil context, got nil")
+			t.Error("expected error with cancelled context, got nil")
+		}
+		if err != context.Canceled {
+			t.Errorf("expected context.Canceled error, got %v", err)
 		}
 	})
 }

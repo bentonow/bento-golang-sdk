@@ -241,38 +241,39 @@ func TestCreateEmails(t *testing.T) {
 }
 
 func TestCreateEmailsRequestValidation(t *testing.T) {
-	client, err := setupTestClient(func(req *http.Request) (*http.Response, error) {
-		return mockResponse(http.StatusOK, map[string]interface{}{
-			"results": 1,
-		}), nil
-	})
+    client, err := setupTestClient(func(_ *http.Request) (*http.Response, error) {
+        return mockResponse(http.StatusOK, map[string]interface{}{
+            "results": 1,
+        }), nil
+    })
 
-	if err != nil {
-		t.Fatalf("failed to setup test client: %v", err)
-	}
+    if err != nil {
+        t.Fatalf("failed to setup test client: %v", err)
+    }
 
-	// Test nil context
-	_, err = client.CreateEmails(nil, []bento.EmailData{{
-		To:       "test@example.com",
-		From:     "sender@example.com",
-		Subject:  "Test",
-		HTMLBody: "<p>Test</p>",
-	}})
-	if err == nil {
-		t.Error("expected error with nil context, got nil")
-	}
+    // Test with nil context
+    nilCtx := context.Context(nil)
+    _, err = client.CreateEmails(nilCtx, []bento.EmailData{{
+        To:       "test@example.com",
+        From:     "sender@example.com",
+        Subject:  "Test",
+        HTMLBody: "<p>Test</p>",
+    }})
+    if err == nil {
+        t.Error("expected error with nil context, got nil")
+    }
 
-	// Test with invalid personalizations
-	_, err = client.CreateEmails(context.Background(), []bento.EmailData{{
-		To:       "test@example.com",
-		From:     "sender@example.com",
-		Subject:  "Test",
-		HTMLBody: "<p>Test</p>",
-		Personalizations: map[string]interface{}{
-			"invalid": make(chan int), // Invalid type that can't be JSON marshaled
-		},
-	}})
-	if err == nil {
-		t.Error("expected error with invalid personalizations, got nil")
-	}
+    // Test with invalid personalizations
+    _, err = client.CreateEmails(context.Background(), []bento.EmailData{{
+        To:       "test@example.com",
+        From:     "sender@example.com",
+        Subject:  "Test",
+        HTMLBody: "<p>Test</p>",
+        Personalizations: map[string]interface{}{
+            "invalid": make(chan int), // Invalid type that can't be JSON marshaled
+        },
+    }})
+    if err == nil {
+        t.Error("expected error with invalid personalizations, got nil")
+    }
 }

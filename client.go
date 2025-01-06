@@ -1,7 +1,6 @@
 package bento
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -77,21 +76,5 @@ func (c *Client) SetHTTPClient(client HTTPDoer) error {
 		return fmt.Errorf("HTTP client cannot be nil")
 	}
 	c.httpClient = client
-	return nil
-}
-
-// validateResponse checks if response body is properly structured
-func validateResponse(data []byte, expectedFields ...string) error {
-	var responseMap map[string]interface{}
-	if err := json.Unmarshal(data, &responseMap); err != nil {
-		return fmt.Errorf("invalid JSON response: %w", err)
-	}
-
-	for _, field := range expectedFields {
-		if _, ok := responseMap[field]; !ok {
-			return fmt.Errorf("missing required field in response: %s", field)
-		}
-	}
-
 	return nil
 }
