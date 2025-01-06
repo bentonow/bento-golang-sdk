@@ -31,9 +31,6 @@ jobs:
             echo "Error: Version must be in format v1.0.0"
             exit 1
           fi
-          
-      - name: Set version
-        run: |
           echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           echo "PREVIOUS_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
