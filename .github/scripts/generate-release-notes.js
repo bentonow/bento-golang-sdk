@@ -1,65 +1,185 @@
-name: Create Release
-
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number for the release (e.g., v1.0.0) must include v'
-        required: true
-        type: string
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: read
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Validate version format
-        run: |
-          if [[ ! ${{ github.event.inputs.version }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: Version must be in format v1.0.0"
-            exit 1
-          fi
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-          echo "PREVIOUS_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      - name: Generate Release Notes
-        id: release_notes
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const script = require('./.github/scripts/generate-release-notes.js')
-            const notes = await script({github, context})
-            core.setOutput('notes', notes)
-
-      - name: Create Tag
-        run: |
-          git tag ${{ github.event.inputs.version }}
-          git push origin ${{ github.event.inputs.version }}
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
-          body: ${{ steps.release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
+module.exports = async ({github, context}) => {
+    // Get the latest tag
+    const { data: tags } = await github.rest.repos.listTags({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        per_page: 1
+    });
+    const latestTag = tags[0]?.name || '';
+    // Get commits since last tag
+    const { data: commits } = await github.rest.repos.compareCommits({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        base: latestTag || 'main~1',
+        head: 'main'
+    });
+    // Get PRs
+    const { data: pulls } = await github.rest.pulls.list({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        state: 'closed',
+        sort: 'updated',
+        direction: 'desc',
+        per_page: 100
+    });
+    // Filter merged PRs since last release
+    const mergedPRs = pulls.filter(pr => {
+        return pr.merged_at && (!latestTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
+    });
+    // Enhanced change type detection
+    const getChangeType = (subject, body = '') => {
+        const text = `${subject}\n${body}`.toLowerCase();
+        // PHP-specific breaking changes
+        if (text.includes('breaking change') ||
+            text.includes('breaking:') ||
+            text.includes('bc break') ||
+            text.includes('backwards compatibility')) return 'breaking';
+        // PHP-specific features
+        if (text.includes('feat:') ||
+            text.includes('feature:') ||
+            text.includes('enhancement:') ||
+            text.includes('new class') ||
+            text.includes('new interface')) return 'feature';
+        // PHP-specific fixes
+        if (text.includes('fix:') ||
+            text.includes('bug:') ||
+            text.includes('hotfix:') ||
+            text.includes('patch:')) return 'bug';
+        // Dependencies
+        if (text.includes('go') ||
+            text.includes('dependency') ||
+            text.includes('upgrade') ||
+            text.includes('bump')) return 'dependency';
+        // Documentation
+        if (text.includes('doc:') ||
+            text.includes('docs:')) return 'docs';
+        // Tests
+        if (text.includes('test:') ||
+            text.includes('test') ||
+            text.includes('coverage')) return 'test';
+        // Maintenance
+        if (text.includes('chore:') ||
+            text.includes('refactor:') ||
+            text.includes('style:') ||
+            text.includes('ci:') ||
+            text.includes('lint')) return 'maintenance';
+        return 'other';
+    };
+    // Enhanced categories
+    const categories = {
+        '🚀 New Features': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'feature'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'feature'
+            )
+        },
+        '🐛 Bug Fixes': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'bug'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'bug'
+            )
+        },
+        '📦 Dependencies': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'dependency'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'dependency'
+            )
+        },
+        '📚 Documentation': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'docs'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'docs'
+            )
+        },
+        '🧪 Tests': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'test'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'test'
+            )
+        },
+        '🔧 Maintenance': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'maintenance'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'maintenance'
+            )
+        },
+        '🔄 Other Changes': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'other'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'other'
+            )
+        }
+    };
+    // Generate markdown
+    let markdown = `## Release v${process.env.VERSION}\n\n`;
+    // Add go version and dependency information
+    markdown += '### Requirements\n\n';
+    markdown += '* Go 1.18 or higher\n';
+    markdown += '* Bento API keys\n';
+    // Add breaking changes first
+    const breakingChanges = [
+        ...commits.commits.filter(commit => getChangeType(commit.commit.message) === 'breaking'),
+        ...mergedPRs.filter(pr => getChangeType(pr.title, pr.body) === 'breaking')
+    ];
+    if (breakingChanges.length > 0) {
+        markdown += '⚠️ **Breaking Changes**\n\n';
+        breakingChanges.forEach(change => {
+            if ('number' in change) { // It's a PR
+                markdown += `* ${change.title} (#${change.number})\n`;
+            } else { // It's a commit
+                const firstLine = change.commit.message.split('\n')[0];
+                markdown += `* ${firstLine} (${change.sha.substring(0, 7)})\n`;
+            }
+        });
+        markdown += '\n';
+    }
+    // Add categorized changes
+    for (const [category, items] of Object.entries(categories)) {
+        if (items.commits.length > 0 || items.prs.length > 0) {
+            markdown += `### ${category}\n\n`;
+            // Add PRs first
+            items.prs.forEach(pr => {
+                markdown += `* ${pr.title} (#${pr.number}) @${pr.user.login}\n`;
+            });
+            // Add commits that aren't associated with PRs
+            items.commits
+                .filter(commit => !items.prs.some(pr => pr.merge_commit_sha === commit.sha))
+                .forEach(commit => {
+                    const firstLine = commit.commit.message.split('\n')[0];
+                    markdown += `* ${firstLine} (${commit.sha.substring(0, 7)}) @${commit.author?.login || commit.commit.author.name}\n`;
+                });
+            markdown += '\n';
+        }
+    }
+    // Add installation instructions
+    markdown += '### Installation\n\n';
+    markdown += '```bash\n';
+    markdown += 'go get github.com/bentonow/bento-golang-sdk\n';
+    markdown += '```\n\n';
+    // Add contributors section
+    const contributors = new Set([
+        ...mergedPRs.map(pr => pr.user.login),
+        ...commits.commits.map(commit => commit.author?.login || commit.commit.author.name)
+    ]);
+    if (contributors.size > 0) {
+        markdown += '## Contributors\n\n';
+        [...contributors].forEach(contributor => {
+            markdown += `* ${contributor.includes('@') ? contributor : '@' + contributor}\n`;
+        });
+    }
+    return markdown;
+}
