@@ -31,7 +31,7 @@ module.exports = async ({github, context}) => {
         return pr.merged_at && (!latestTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
     });
 
-    // Enhanced change type detection for PHP packages
+    // Enhanced change type detection
     const getChangeType = (subject, body = '') => {
         const text = `${subject}\n${body}`.toLowerCase();
 
@@ -55,19 +55,18 @@ module.exports = async ({github, context}) => {
             text.includes('patch:')) return 'bug';
 
         // Dependencies
-        if (text.includes('composer') ||
+        if (text.includes('go') ||
             text.includes('dependency') ||
             text.includes('upgrade') ||
             text.includes('bump')) return 'dependency';
 
         // Documentation
         if (text.includes('doc:') ||
-            text.includes('docs:') ||
-            text.includes('phpdoc')) return 'docs';
+            text.includes('docs:')) return 'docs';
 
         // Tests
         if (text.includes('test:') ||
-            text.includes('phpunit') ||
+            text.includes('test') ||
             text.includes('coverage')) return 'test';
 
         // Maintenance
@@ -80,7 +79,7 @@ module.exports = async ({github, context}) => {
         return 'other';
     };
 
-    // Enhanced categories for PHP packages
+    // Enhanced categories
     const categories = {
         '🚀 New Features': {
             commits: commits.commits.filter(commit =>
@@ -143,11 +142,10 @@ module.exports = async ({github, context}) => {
     // Generate markdown
     let markdown = `## Release v${process.env.VERSION}\n\n`;
 
-    // Add PHP version and dependency information
+    // Add go version and dependency information
     markdown += '### Requirements\n\n';
-    markdown += '* PHP 8.0 or higher\n';
-    markdown += '* Laravel 10.0 or higher\n';
-    markdown += '* Statamic 5.0 or higher\n\n';
+    markdown += '* Go 1.18 or higher\n';
+    markdown += '* Bento API keys\n';
 
     // Add breaking changes first
     const breakingChanges = [
@@ -193,7 +191,7 @@ module.exports = async ({github, context}) => {
     // Add installation instructions
     markdown += '### Installation\n\n';
     markdown += '```bash\n';
-    markdown += 'composer require bento/bento-statamic\n';
+    markdown += 'go get github.com/bentonow/bento-golang-sdk\n';
     markdown += '```\n\n';
 
     // Add contributors section
