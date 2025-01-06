@@ -1,7 +1,7 @@
 package main
 
 import (
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 	"context"
 	"encoding/json"
 	"fmt"

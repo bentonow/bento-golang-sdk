@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestCreateEmails(t *testing.T) {
@@ -264,10 +264,10 @@ func TestCreateEmailsRequestValidation(t *testing.T) {
 
 	// Test with invalid personalizations
 	_, err = client.CreateEmails(context.Background(), []bento.EmailData{{
-		To:               "test@example.com",
-		From:             "sender@example.com",
-		Subject:          "Test",
-		HTMLBody:         "<p>Test</p>",
+		To:       "test@example.com",
+		From:     "sender@example.com",
+		Subject:  "Test",
+		HTMLBody: "<p>Test</p>",
 		Personalizations: map[string]interface{}{
 			"invalid": make(chan int), // Invalid type that can't be JSON marshaled
 		},

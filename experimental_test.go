@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestGetBlacklistStatus(t *testing.T) {
@@ -290,7 +290,7 @@ func TestGetGender(t *testing.T) {
 			name:     "successful gender prediction",
 			fullName: "John Doe",
 			response: map[string]interface{}{
-				"gender": "male",
+				"gender":      "male",
 				"probability": 0.95,
 			},
 			statusCode:  http.StatusOK,
@@ -360,9 +360,9 @@ func TestGeoLocateIP(t *testing.T) {
 			name:      "successful geolocation",
 			ipAddress: "1.1.1.1",
 			response: map[string]interface{}{
-				"country": "US",
-				"city":    "Los Angeles",
-				"latitude": 34.0522,
+				"country":   "US",
+				"city":      "Los Angeles",
+				"latitude":  34.0522,
 				"longitude": -118.2437,
 			},
 			statusCode:  http.StatusOK,

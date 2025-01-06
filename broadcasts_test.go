@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestGetBroadcasts(t *testing.T) {
@@ -215,8 +215,8 @@ func TestCreateBroadcast(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:       "server error",
-			broadcasts: validBroadcasts,
+			name:        "server error",
+			broadcasts:  validBroadcasts,
 			statusCode:  http.StatusInternalServerError,
 			expectError: true,
 		},

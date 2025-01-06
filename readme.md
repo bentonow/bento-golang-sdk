@@ -39,7 +39,7 @@ import (
     "log"
     "time"
 
-    "github.com/bentonow/bento-go-sdk"
+    "github.com/bentonow/bento-golang-sdk"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestChartTypeIsValid(t *testing.T) {
@@ -63,9 +63,9 @@ func TestSubscriberDataJSONMarshaling(t *testing.T) {
 			UUID           string                 `json:"uuid"`
 			Email          string                 `json:"email"`
 			Fields         map[string]interface{} `json:"fields"`
-			CachedTagIDs   []string              `json:"cached_tag_ids"`
-			UnsubscribedAt *string               `json:"unsubscribed_at"`
-			NavigationURL  string                `json:"navigation_url"`
+			CachedTagIDs   []string               `json:"cached_tag_ids"`
+			UnsubscribedAt *string                `json:"unsubscribed_at"`
+			NavigationURL  string                 `json:"navigation_url"`
 		}{
 			UUID:  "test_uuid",
 			Email: "test@example.com",

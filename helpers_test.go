@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 // mockHTTPClient is a test helper that returns a custom http.Client

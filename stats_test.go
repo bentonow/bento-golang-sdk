@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestGetSiteStats(t *testing.T) {
@@ -19,10 +19,10 @@ func TestGetSiteStats(t *testing.T) {
 		{
 			name: "successful stats retrieval",
 			response: map[string]interface{}{
-				"total_subscribers": 1000,
+				"total_subscribers":  1000,
 				"active_subscribers": 950,
-				"growth_rate": 5.5,
-				"engagement_rate": 75.2,
+				"growth_rate":        5.5,
+				"engagement_rate":    75.2,
 			},
 			statusCode:  http.StatusOK,
 			expectError: false,
@@ -99,10 +99,10 @@ func TestGetSegmentStats(t *testing.T) {
 			name:      "successful segment stats retrieval",
 			segmentID: "segment123",
 			response: map[string]interface{}{
-				"segment_size": 500,
+				"segment_size":    500,
 				"conversion_rate": 25.5,
 				"engagement_metrics": map[string]interface{}{
-					"opens": 1500,
+					"opens":  1500,
 					"clicks": 750,
 				},
 			},
@@ -116,8 +116,8 @@ func TestGetSegmentStats(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:      "server error",
-			segmentID: "segment123",
+			name:        "server error",
+			segmentID:   "segment123",
 			statusCode:  http.StatusInternalServerError,
 			expectError: true,
 		},
@@ -199,7 +199,7 @@ func TestGetReportStats(t *testing.T) {
 			reportID: "report123",
 			response: map[string]interface{}{
 				"report_metrics": map[string]interface{}{
-					"total_views": 1000,
+					"total_views":  1000,
 					"unique_views": 750,
 					"average_time": 120,
 				},
@@ -218,8 +218,8 @@ func TestGetReportStats(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:      "server error",
-			reportID:  "report123",
+			name:        "server error",
+			reportID:    "report123",
 			statusCode:  http.StatusInternalServerError,
 			expectError: true,
 		},

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	bento "bento-golang-sdk"
+	bento "github.com/bentonow/bento-golang-sdk"
 )
 
 func TestClientCreation(t *testing.T) {
