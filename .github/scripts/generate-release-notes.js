@@ -1,19 +1,19 @@
-module.exports = async ({github, context}) => {
-    // Get the latest tag
+module.exports = async ({github, context, version}) => {
+    // Get the previous tag to compare against
     const { data: tags } = await github.rest.repos.listTags({
         owner: context.repo.owner,
         repo: context.repo.repo,
         per_page: 1
     });
 
-    const latestTag = tags[0]?.name || '';
+    const previousTag = tags[0]?.name;
 
     // Get commits since last tag
     const { data: commits } = await github.rest.repos.compareCommits({
         owner: context.repo.owner,
         repo: context.repo.repo,
-        base: latestTag || 'master~1',
-        head: 'master'
+        base: previousTag || 'HEAD~100', // If no previous tag, get last 100 commits
+        head: 'HEAD'
     });
 
     // Get PRs
@@ -28,7 +28,7 @@ module.exports = async ({github, context}) => {
 
     // Filter merged PRs since last release
     const mergedPRs = pulls.filter(pr => {
-        return pr.merged_at && (!latestTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
+        return pr.merged_at && (!previousTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
     });
 
     // Helper function to determine type from text
@@ -87,7 +87,11 @@ module.exports = async ({github, context}) => {
     };
 
     // Generate markdown
-    let markdown = '## What\'s Changed\n\n';
+    let markdown = `# Release ${version}\n\n`;
+
+    if (previousTag) {
+        markdown += `## Changes since ${previousTag}\n\n`;
+    }
 
     // Add breaking changes first
     const breakingChanges = [
@@ -115,7 +119,7 @@ module.exports = async ({github, context}) => {
 
             // Add PRs first
             items.prs.forEach(pr => {
-                markdown += `* ${pr.title} (#${pr.number}) @${pr.user.login}\n`;
+                markdown += `* ${pr.title} (#${pr.number}) by @${pr.user.login}\n`;
             });
 
             // Add commits that aren't associated with PRs
@@ -123,7 +127,7 @@ module.exports = async ({github, context}) => {
                 .filter(commit => !items.prs.some(pr => pr.merge_commit_sha === commit.sha))
                 .forEach(commit => {
                     const firstLine = commit.commit.message.split('\n')[0];
-                    markdown += `* ${firstLine} (${commit.sha.substring(0, 7)}) @${commit.author?.login || commit.commit.author.name}\n`;
+                    markdown += `* ${firstLine} (${commit.sha.substring(0, 7)}) by @${commit.author?.login || commit.commit.author.name}\n`;
                 });
 
             markdown += '\n';
@@ -138,7 +142,7 @@ module.exports = async ({github, context}) => {
 
     if (contributors.size > 0) {
         markdown += '## Contributors\n\n';
-        [...contributors].forEach(contributor => {
+        [...contributors].sort().forEach(contributor => {
             markdown += `* ${contributor.includes('@') ? contributor : '@' + contributor}\n`;
         });
     }
