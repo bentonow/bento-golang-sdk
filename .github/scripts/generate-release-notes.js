@@ -1,19 +1,19 @@
-module.exports = async ({github, context, version}) => {
-    // Get the previous tag to compare against
+module.exports = async ({github, context}) => {
+    // Get the latest tag
     const { data: tags } = await github.rest.repos.listTags({
         owner: context.repo.owner,
         repo: context.repo.repo,
         per_page: 1
     });
 
-    const previousTag = tags[0]?.name;
+    const latestTag = tags[0]?.name || '';
 
     // Get commits since last tag
     const { data: commits } = await github.rest.repos.compareCommits({
         owner: context.repo.owner,
         repo: context.repo.repo,
-        base: previousTag || 'HEAD~100', // If no previous tag, get last 100 commits
-        head: 'HEAD'
+        base: latestTag || 'main~1',
+        head: 'main'
     });
 
     // Get PRs
@@ -28,21 +28,59 @@ module.exports = async ({github, context, version}) => {
 
     // Filter merged PRs since last release
     const mergedPRs = pulls.filter(pr => {
-        return pr.merged_at && (!previousTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
+        return pr.merged_at && (!latestTag || new Date(pr.merged_at) > new Date(tags[0]?.created_at));
     });
 
-    // Helper function to determine type from text
+    // Enhanced change type detection for PHP packages
     const getChangeType = (subject, body = '') => {
         const text = `${subject}\n${body}`.toLowerCase();
-        if (text.includes('breaking change') || text.includes('breaking:')) return 'breaking';
-        if (text.includes('feat:') || text.includes('feature:') || text.includes('enhancement:')) return 'feature';
-        if (text.includes('fix:') || text.includes('bug:')) return 'bug';
-        if (text.includes('doc:') || text.includes('docs:')) return 'docs';
-        if (text.includes('chore:') || text.includes('refactor:') || text.includes('style:')) return 'maintenance';
+
+        // PHP-specific breaking changes
+        if (text.includes('breaking change') ||
+            text.includes('breaking:') ||
+            text.includes('bc break') ||
+            text.includes('backwards compatibility')) return 'breaking';
+
+        // PHP-specific features
+        if (text.includes('feat:') ||
+            text.includes('feature:') ||
+            text.includes('enhancement:') ||
+            text.includes('new class') ||
+            text.includes('new interface')) return 'feature';
+
+        // PHP-specific fixes
+        if (text.includes('fix:') ||
+            text.includes('bug:') ||
+            text.includes('hotfix:') ||
+            text.includes('patch:')) return 'bug';
+
+        // Dependencies
+        if (text.includes('composer') ||
+            text.includes('dependency') ||
+            text.includes('upgrade') ||
+            text.includes('bump')) return 'dependency';
+
+        // Documentation
+        if (text.includes('doc:') ||
+            text.includes('docs:') ||
+            text.includes('phpdoc')) return 'docs';
+
+        // Tests
+        if (text.includes('test:') ||
+            text.includes('phpunit') ||
+            text.includes('coverage')) return 'test';
+
+        // Maintenance
+        if (text.includes('chore:') ||
+            text.includes('refactor:') ||
+            text.includes('style:') ||
+            text.includes('ci:') ||
+            text.includes('lint')) return 'maintenance';
+
         return 'other';
     };
 
-    // Categorize changes
+    // Enhanced categories for PHP packages
     const categories = {
         '🚀 New Features': {
             commits: commits.commits.filter(commit =>
@@ -60,12 +98,28 @@ module.exports = async ({github, context, version}) => {
                 getChangeType(pr.title, pr.body) === 'bug'
             )
         },
+        '📦 Dependencies': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'dependency'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'dependency'
+            )
+        },
         '📚 Documentation': {
             commits: commits.commits.filter(commit =>
                 getChangeType(commit.commit.message) === 'docs'
             ),
             prs: mergedPRs.filter(pr =>
                 getChangeType(pr.title, pr.body) === 'docs'
+            )
+        },
+        '🧪 Tests': {
+            commits: commits.commits.filter(commit =>
+                getChangeType(commit.commit.message) === 'test'
+            ),
+            prs: mergedPRs.filter(pr =>
+                getChangeType(pr.title, pr.body) === 'test'
             )
         },
         '🔧 Maintenance': {
@@ -87,11 +141,13 @@ module.exports = async ({github, context, version}) => {
     };
 
     // Generate markdown
-    let markdown = `# Release ${version}\n\n`;
+    let markdown = `## Release v${process.env.VERSION}\n\n`;
 
-    if (previousTag) {
-        markdown += `## Changes since ${previousTag}\n\n`;
-    }
+    // Add PHP version and dependency information
+    markdown += '### Requirements\n\n';
+    markdown += '* PHP 8.0 or higher\n';
+    markdown += '* Laravel 10.0 or higher\n';
+    markdown += '* Statamic 5.0 or higher\n\n';
 
     // Add breaking changes first
     const breakingChanges = [
@@ -119,7 +175,7 @@ module.exports = async ({github, context, version}) => {
 
             // Add PRs first
             items.prs.forEach(pr => {
-                markdown += `* ${pr.title} (#${pr.number}) by @${pr.user.login}\n`;
+                markdown += `* ${pr.title} (#${pr.number}) @${pr.user.login}\n`;
             });
 
             // Add commits that aren't associated with PRs
@@ -127,12 +183,18 @@ module.exports = async ({github, context, version}) => {
                 .filter(commit => !items.prs.some(pr => pr.merge_commit_sha === commit.sha))
                 .forEach(commit => {
                     const firstLine = commit.commit.message.split('\n')[0];
-                    markdown += `* ${firstLine} (${commit.sha.substring(0, 7)}) by @${commit.author?.login || commit.commit.author.name}\n`;
+                    markdown += `* ${firstLine} (${commit.sha.substring(0, 7)}) @${commit.author?.login || commit.commit.author.name}\n`;
                 });
 
             markdown += '\n';
         }
     }
+
+    // Add installation instructions
+    markdown += '### Installation\n\n';
+    markdown += '```bash\n';
+    markdown += 'composer require bento/bento-statamic\n';
+    markdown += '```\n\n';
 
     // Add contributors section
     const contributors = new Set([
@@ -142,7 +204,7 @@ module.exports = async ({github, context, version}) => {
 
     if (contributors.size > 0) {
         markdown += '## Contributors\n\n';
-        [...contributors].sort().forEach(contributor => {
+        [...contributors].forEach(contributor => {
             markdown += `* ${contributor.includes('@') ? contributor : '@' + contributor}\n`;
         });
     }
