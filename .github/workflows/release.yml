@@ -58,4 +58,4 @@ jobs:
           name: Release v${{ env.VERSION }}
           body: ${{ steps.release_notes.outputs.notes }}
           draft: false
-          prerelease: ${{ github.event.inputs.type != 'stable' }}
+          prerelease: false
