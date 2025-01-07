@@ -1,6 +1,7 @@
 package bento
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -8,8 +9,13 @@ import (
 // Client is the main entry point for the Bento SDK
 type Client struct {
 	baseURL    string
-	httpClient *http.Client
+	httpClient HTTPDoer
 	config     *Config
+}
+
+// HTTPDoer interface for HTTP client implementations
+type HTTPDoer interface {
+	Do(*http.Request) (*http.Response, error)
 }
 
 // Config holds the configuration for the Bento client
@@ -26,6 +32,12 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, ErrInvalidConfig
 	}
 
+	// Validate timeout value
+	if config.Timeout < 0 {
+		return nil, fmt.Errorf("timeout must be non-negative")
+	}
+
+	// Set default timeout if none provided
 	if config.Timeout == 0 {
 		config.Timeout = 10 * time.Second
 	}
@@ -39,8 +51,13 @@ func NewClient(config *Config) (*Client, error) {
 	}, nil
 }
 
-// do executes an HTTP request and returns the response
+// do executes an HTTP request with proper context handling
 func (c *Client) do(req *http.Request) (*http.Response, error) {
+	// Check if context is already cancelled/timeout
+	if err := req.Context().Err(); err != nil {
+		return nil, err
+	}
+
 	req.SetBasicAuth(c.config.PublishableKey, c.config.SecretKey)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
@@ -51,4 +68,13 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 	req.URL.RawQuery = q.Encode()
 
 	return c.httpClient.Do(req)
+}
+
+// SetHTTPClient sets a custom HTTP client
+func (c *Client) SetHTTPClient(client HTTPDoer) error {
+	if client == nil {
+		return fmt.Errorf("HTTP client cannot be nil")
+	}
+	c.httpClient = client
+	return nil
 }

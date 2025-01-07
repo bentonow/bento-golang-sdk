@@ -39,7 +39,7 @@ import (
     "log"
     "time"
 
-    "github.com/bentonow/bento-go-sdk"
+    "github.com/bentonow/bento-golang-sdk"
 )
 
 func main() {
@@ -609,6 +609,7 @@ for _, chunk := range subscribers.Chunk(500) {
 5. The SDK uses the standard `net/http` client with configurable timeouts
 6. All responses are properly typed for better type safety
 7. The SDK supports concurrent usage and is safe for concurrent access
+8. All Methods have a test
 
 ## Contributing
 
