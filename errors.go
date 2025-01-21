@@ -13,4 +13,5 @@ var (
 	ErrInvalidContent   = errors.New("invalid content")
 	ErrInvalidTags      = errors.New("invalid tags format")
 	ErrInvalidBatchSize = errors.New("invalid batch size")
+	ErrInvalidKeyLength = errors.New("invalid key length")
 )
