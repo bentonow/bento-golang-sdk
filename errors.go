@@ -3,37 +3,14 @@ package bento
 import "errors"
 
 // Define package-level errors
-var (
-	// ErrInvalidConfig indicates missing required configuration fields
-	ErrInvalidConfig = errors.New("invalid configuration: missing required fields")
-
-	// ErrInvalidEmail indicates an invalid email address format
-	ErrInvalidEmail = errors.New("invalid email address")
-
-	// ErrInvalidIPAddress indicates an invalid IP address format
-	ErrInvalidIPAddress = errors.New("invalid IP address")
-
-	// ErrInvalidRequest indicates invalid request parameters
-	ErrInvalidRequest = errors.New("invalid request parameters")
-
-	// ErrAPIResponse indicates an unexpected API response
-	ErrAPIResponse = errors.New("unexpected API response")
-
-	// ErrInvalidName indicates an invalid name format
-	ErrInvalidName = errors.New("invalid name format")
-
-	// ErrInvalidSegmentID indicates an invalid segment ID
-	ErrInvalidSegmentID = errors.New("invalid segment ID")
-
-	// ErrInvalidContent indicates invalid content
-	ErrInvalidContent = errors.New("invalid content")
-
-	// ErrInvalidTags indicates invalid tags format
-	ErrInvalidTags = errors.New("invalid tags format")
-
-	// ErrInvalidBatchSize indicates invalid batch size
-	ErrInvalidBatchSize = errors.New("invalid batch size")
-
-	// ErrInvalidKeyLength indicates an invalid key length
-	ErrInvalidKeyLength = errors.New("invalid key length")
-)
+var ErrInvalidConfig = errors.New("invalid configuration: missing required fields")
+var ErrInvalidEmail = errors.New("invalid email address")
+var ErrInvalidIPAddress = errors.New("invalid IP address")
+var ErrInvalidRequest = errors.New("invalid request parameters")
+var ErrAPIResponse = errors.New("unexpected API response")
+var ErrInvalidName = errors.New("invalid name format")
+var ErrInvalidSegmentID = errors.New("invalid segment ID")
+var ErrInvalidContent = errors.New("invalid content")
+var ErrInvalidTags = errors.New("invalid tags format")
+var ErrInvalidBatchSize = errors.New("invalid batch size")
+var ErrInvalidKeyLength = errors.New("invalid key length")
