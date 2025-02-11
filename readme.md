@@ -8,6 +8,9 @@ The Bento Go SDK makes it quick and easy to send emails and track events in your
 
 Get started with our [📚 integration guides](https://docs.bentonow.com), or [📘 browse the SDK reference](https://docs.bentonow.com/subscribers).
 
+❤️ Thank you [Matt Boyle](https://github.com/MatthewJamesBoyle) for your contribution.
+
+
 ## Features
 
 * **Event Tracking**: Easily track custom events and user behavior in your Go applications.
